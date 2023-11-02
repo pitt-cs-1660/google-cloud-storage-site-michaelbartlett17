@@ -1,0 +1,46 @@
+name: Static Site
+
+on:
+  push:
+    branches:
+      - main  # Set a branch to deploy
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true  # Fetch Hugo themes (true OR recursive)
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      # build you static site here if needed
+      # - id: 'build'
+      #   name: 'Build'
+      #   run: |
+      #     hugo --gc --minify
+
+
+      # configure gcloud `setup-gcloud` automatically
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: 'projects/143616246873/locations/global/workloadIdentityPools/<YOUR POOL HERE>/providers/<YOUR PROVIDER HERE>'
+          service_account: 'github-actions-service-account@<YOUR PROJECT ID>.iam.gserviceaccount.com' # UPDATE THIS TO YOUR SERVICE ACCOUNT
+
+      # upload files to GCS
+      - id: 'upload-static-files'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: 'public' # UPDATE THIS TO YOUR BUILD/FILES DIRECTORY
+          destination: 'storage-bucket-name' # UPDATE THIS TO YOUR BUCKET NAME
+          parent: false
+
