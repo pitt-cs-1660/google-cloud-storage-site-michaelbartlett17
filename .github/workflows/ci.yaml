@@ -3,7 +3,7 @@ name: Static Site
 on:
   push:
     branches:
-      - main  # Set a branch to deploy
+      - main
   pull_request:
 
 permissions:
@@ -13,34 +13,48 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./src
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true  # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
-      # build you static site here if needed
-      # - id: 'build'
-      #   name: 'Build'
-      #   run: |
-      #     hugo --gc --minify
+        # setup node
+      - id: 'setup-node'
+        name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+        
+        # install yarn
+      - id: 'install-yarn'
+        name: Install Yarn
+        run: npm install -g yarn
 
+      # build static site
+      - id: 'build'
+        name: 'Install Modules And Build'
+        run: |
+          yarn install
+          yarn build
 
       # configure gcloud `setup-gcloud` automatically
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
-          workload_identity_provider: 'projects/143616246873/locations/global/workloadIdentityPools/<YOUR POOL HERE>/providers/<YOUR PROVIDER HERE>'
-          service_account: 'github-actions-service-account@<YOUR PROJECT ID>.iam.gserviceaccount.com' # UPDATE THIS TO YOUR SERVICE ACCOUNT
+          workload_identity_provider: 'projects/811440364468/locations/global/workloadIdentityPools/github/providers/my-repo'
+          service_account: 'gh-actions-service-account@cs-1660-404523.iam.gserviceaccount.com'
 
       # upload files to GCS
       - id: 'upload-static-files'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: 'public' # UPDATE THIS TO YOUR BUILD/FILES DIRECTORY
-          destination: 'storage-bucket-name' # UPDATE THIS TO YOUR BUCKET NAME
+          path: '.next/out'
+          destination: 'static-site-project'
           parent: false
 
