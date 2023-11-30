@@ -30,6 +30,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'yarn'
+          cache-dependency-path: './src/yarn.lock'
         
         # install yarn
       - id: 'install-yarn'
