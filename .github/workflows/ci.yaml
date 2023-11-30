@@ -43,6 +43,13 @@ jobs:
         run: |
           yarn install
           yarn build
+      
+      # download resume to assets
+      - id: 'download-resume'
+        name: 'Download Resume'
+        run: |
+          mkdir out/assets
+          wget https://michaelbartlett.me/static/documents/resume.pdf -O out/assets/resume.pdf
 
       # configure gcloud `setup-gcloud` automatically
       - id: 'auth'
